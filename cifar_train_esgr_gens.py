@@ -86,7 +86,9 @@ flags.DEFINE_integer('gen_how_many', 2000, '')
 
 flags.DEFINE_float('label_smoothing', 1., 'the smoothed label for generated samples')
 
-flags.DEFINE_boolean('new_class_gens', True, '')
+# balanced version or not (mentioned in the supplementary material)
+flags.DEFINE_boolean('new_class_gens', True, 'True: balanced version of ESGR-gens; '
+                                             'False: original imbalanced version of ESGR-gens')
 
 FLAGS = flags.FLAGS
 
@@ -143,7 +145,7 @@ def main(_):
         # Save all intermediate result in the result_folder
         method_name = '_'.join(os.path.basename(__file__).split('.')[0].split('_')[2:])
         method_name += '_gen_%d_and_select' % FLAGS.gen_how_many if FLAGS.gen_more_and_select else ''
-        method_name += '_new_class_gens' if FLAGS.new_class_gens else ''
+        method_name += '_balanced' if FLAGS.new_class_gens else ''
         method_name += '' if FLAGS.label_smoothing == 1. else '_smoothing_%.1f' % FLAGS.label_smoothing
 
         cls_func = '' if FLAGS.use_softmax else '_sigmoid'
@@ -175,6 +177,9 @@ def main(_):
 
         graph_cls = tf.Graph()
         with graph_cls.as_default():
+            '''
+            Define variables
+            '''
             batch_images = tf.placeholder(tf.float32, shape=[None, 32, 32, 3])
             batch = tf.Variable(0, trainable=False, name='LeNet-train/iteration')
             learning_rate = tf.placeholder(tf.float32, shape=[])
