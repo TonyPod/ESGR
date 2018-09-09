@@ -21,18 +21,13 @@ flags = tf.app.flags
 
 flags.DEFINE_float('adam_lr', 1e-3, 'default: 1e-3')
 
-# 数据集的相关常量
-flags.DEFINE_string("dataset", "cifar-100", "The name of dataset [cifar-10, cifar-100]")
-
-# 超参数选取
-flags.DEFINE_boolean('use_momentum', True, '优化算法是否加冲量，如果不加的话是GradientDescent')
+flags.DEFINE_boolean('use_momentum', True, 'Gradient descent or gradient descent with momentum')
 flags.DEFINE_float('momentum', 0.9, '')
 
-flags.DEFINE_integer('epochs_per_category', 70, '每个类别的epoch次数')
-flags.DEFINE_integer('train_batch_size', 128, '训练的batch size')
-flags.DEFINE_integer('test_batch_size', 128, 'test的batch size')
+flags.DEFINE_integer('epochs_per_category', 70, 'number of epochs for each training session')
+flags.DEFINE_integer('train_batch_size', 128, 'training batch size')
+flags.DEFINE_integer('test_batch_size', 128, 'test batch size')
 
-# 训练的相关常量
 flags.DEFINE_float('base_lr', 0.01, 'lenet: 0.01, nin: 0.1, resnet: 0.1')
 flags.DEFINE_float('weight_decay', 0.00001, '0.00001, resnet: 0.002')
 flags.DEFINE_float('lr_factor', 5., '')
@@ -40,7 +35,6 @@ flags.DEFINE_integer('display_interval', 20, '')
 flags.DEFINE_integer('test_interval', 100, '')
 lr_strat = [49, 63]
 
-# 其他参数选取
 flags.DEFINE_string('result_dir', 'result/', '')
 
 # Network architecture
@@ -51,7 +45,7 @@ flags.DEFINE_boolean('use_softmax', True, 'True: softmax; False: sigmoid')
 flags.DEFINE_boolean('no_truncate', False, '')
 
 # Add how many classes every time
-flags.DEFINE_integer('nb_cl', 1, '')
+flags.DEFINE_integer('nb_cl', 10, '')
 
 # DEBUG
 flags.DEFINE_integer('from_class_idx', 0, 'starting category_idx')
@@ -61,10 +55,11 @@ flags.DEFINE_integer('to_class_idx', 99, 'ending category_idx')
 flags.DEFINE_string('init_strategy', 'no', 'no | last | all')
 
 # Order file
-flags.DEFINE_string('order_file', 'order_1', '')
+flags.DEFINE_string('order_file', 'order_1', '[order_1, order_2, order_3]')
 
-# Exemplar parent folder(indicate that which method is used)
-flags.DEFINE_string('exemplars_base_folder', 'wgan_gp_proto_high_1.0-1.0_icarl_2000', '')
+# Exemplar parent folder(this method is dependant on ESGR-mix (for ablation study only), so run ESGR-mix first, then
+# input the result folder of ESGR-mix here, e.g. esgr_mix_balanced_high_1.0-1.0_icarl_2000)
+flags.DEFINE_string('exemplars_base_folder', 'esgr_mix_balanced_high_1.0-1.0_icarl_2000', '')
 
 FLAGS = flags.FLAGS
 
@@ -75,30 +70,22 @@ def main(_):
 
     pp.pprint(flags.FLAGS.__flags)
 
+    # Load the class order
     order = []
     with open('cifar-100_%s.txt' % FLAGS.order_file) as file_in:
         for line in file_in.readlines():
             order.append(int(line))
     order = np.array(order)
 
-    if FLAGS.dataset == 'cifar-10':
-        import cifar10
-        NUM_CLASSES = 10  # 类别数量
-        NUM_TRAIN_SAMPLES_PER_CLASS = 5000  # 每个类别的训练样本个数
-        NUM_TEST_SAMPLES_PER_CLASS = 1000  # 每个类别的训练样本个数
-        train_images, train_labels, train_one_hot_labels, \
-            test_images, test_labels, test_one_hot_labels, \
-            raw_images_train, raw_images_test, pixel_mean = cifar10.load_data(mean_subtraction=True)
-    elif FLAGS.dataset == 'cifar-100':
-        import cifar100
-        NUM_CLASSES = 100  # 类别数量
-        NUM_TRAIN_SAMPLES_PER_CLASS = 500  # 每个类别的训练样本个数
-        NUM_TEST_SAMPLES_PER_CLASS = 100  # 每个类别的训练样本个数
-        train_images, train_labels, train_one_hot_labels, \
-            test_images, test_labels, test_one_hot_labels, \
-            raw_images_train, raw_images_test, pixel_mean = cifar100.load_data(order, mean_subtraction=True)
+    import cifar100
+    NUM_CLASSES = 100  # number of classes
+    NUM_TRAIN_SAMPLES_PER_CLASS = 500  # number of training samples per class
+    NUM_TEST_SAMPLES_PER_CLASS = 100  # number of test samples per class
+    train_images, train_labels, train_one_hot_labels, \
+        test_images, test_labels, test_one_hot_labels, \
+        raw_images_train, raw_images_test, pixel_mean = cifar100.load_data(order, mean_subtraction=True)
 
-    # 训练样本总数
+    # Number of all training samples
     NUM_TRAIN_SAMPLES_TOTAL = NUM_CLASSES * NUM_TRAIN_SAMPLES_PER_CLASS
     NUM_TEST_SAMPLES_TOTAL = NUM_CLASSES * NUM_TEST_SAMPLES_PER_CLASS
 
@@ -116,17 +103,17 @@ def main(_):
             logits, end_points = utils_nin.nin(inputs, is_training=is_training, num_classes=NUM_CLASSES,
                                                scope=('NIN-' + train_or_test[is_training]))
         else:
-            raise Exception()
+            raise Exception('Invalid network architecture')
         return logits, end_points
 
     '''
     Define variables
     '''
-    # save all intermediate result in the result_folder
+    # Save all intermediate result in the result_folder
     method_name = '_'.join(os.path.basename(__file__).split('.')[0].split('_')[2:])
 
     cls_func = '' if FLAGS.use_softmax else '_sigmoid'
-    result_base_folder = os.path.join(FLAGS.result_dir, FLAGS.dataset + '_' + FLAGS.order_file,
+    result_base_folder = os.path.join(FLAGS.result_dir, 'cifar-100_' + FLAGS.order_file,
                                  'nb_cl_' + str(FLAGS.nb_cl),
                                  'non_truncated' if FLAGS.no_truncate else 'truncated',
                                  FLAGS.network_arch + ('_%d' % FLAGS.num_resblocks if FLAGS.network_arch == 'resnet' else '') + cls_func + '_init_' + FLAGS.init_strategy,
@@ -144,6 +131,7 @@ def main(_):
     if not os.path.exists(exemplars_folder):
         raise Exception()
 
+    # Add a "_run-i" suffix to the folder name if the folder exists
     if os.path.exists(result_folder):
         temp_i = 2
         while True:
@@ -175,11 +163,10 @@ def main(_):
         Define the training network
         '''
         train_logits, _ = build_cnn(batch_images, True)
-        train_masked_logits = tf.gather(train_logits, tf.squeeze(tf.where(mask_output)), axis=1)    # masking operation
+        train_masked_logits = tf.gather(train_logits, tf.squeeze(tf.where(mask_output)), axis=1)
         train_masked_logits = tf.cond(tf.equal(tf.rank(train_masked_logits), 1),
                                       lambda: tf.expand_dims(train_masked_logits, 1),
-                                      lambda: train_masked_logits)    # convert to (N, 1) if the shape is (N,), otherwise softmax would output wrong values
-        # Train accuracy(since there is only one class excluding the old recorded responses, this accuracy is not very meaningful)
+                                      lambda: train_masked_logits)
         train_pred = tf.argmax(train_masked_logits, 1)
         train_ground_truth = tf.argmax(one_hot_labels_truncated, 1)
         correct_prediction = tf.equal(train_pred, train_ground_truth)
@@ -220,9 +207,8 @@ def main(_):
         test_accuracy = tf.placeholder(tf.float32)
 
         '''
-        Copy network
+        Copy network (define the copying op)
         '''
-        # test_network的参数与train_network相同
         if FLAGS.network_arch == 'resnet':
             all_variables = tf.get_collection(tf.GraphKeys.WEIGHTS)
         else:
@@ -251,7 +237,7 @@ def main(_):
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
         sess = tf.Session(config=config, graph=graph_cls)
-        sess.run(tf.global_variables_initializer())  # 初始化
+        sess.run(tf.global_variables_initializer())
 
         saver = tf.train.Saver()
 
@@ -273,12 +259,12 @@ def main(_):
     '''
     Declaration of other vars
     '''
-    # 累积准确率
+    # Average accuracy on seen classes
     aver_acc_over_time = dict()
     aver_acc_per_class_over_time = dict()
     conf_mat_over_time = dict()
 
-    # 网络的mask
+    # Network mask
     mask_output_val = np.zeros([NUM_CLASSES], dtype=bool)
 
     '''
@@ -308,7 +294,7 @@ def main(_):
             # init certain layers
             sess.run(init_ops)
 
-            # Training set(current category)
+            # Training set (current category)
             train_indices = [idx for idx in range(NUM_TRAIN_SAMPLES_TOTAL) if
                              category_idx <= train_labels[idx] <= to_category_idx]
             train_x = raw_images_train[train_indices]
@@ -373,8 +359,6 @@ def main(_):
                         print("NEW LEARNING RATE: %f" % lr)
                     epoch_idx = epoch_idx + 1
 
-                    # print('Epoch %d' % epoch_idx)
-
                     shuffled_indices = range(train_x.shape[0])
                     np.random.shuffle(shuffled_indices)
                     for i in range(0, len(shuffled_indices), FLAGS.train_batch_size):
@@ -400,8 +384,9 @@ def main(_):
 
                 # Test
                 if iteration % FLAGS.test_interval == 0:
-                    sess.run(copy_ops)  # 拷贝LeNet-train中的weights/biases到LeNet-test上
-                    # devide and conquer: to avoid allocating too much GPU memory
+                    sess.run(copy_ops)
+
+                    # Divide and conquer: to avoid allocating too much GPU memory
                     test_pred_val = []
                     for i in range(0, len(test_x), FLAGS.test_batch_size):
                         test_x_batch = test_x[i:i + FLAGS.test_batch_size]
@@ -432,8 +417,8 @@ def main(_):
             '''
             Final test(before the next class is added)
             '''
-            sess.run(copy_ops)  # 拷贝LeNet-train中的weights/biases到LeNet-test上
-            # devide and conquer: to avoid allocating too much GPU memory
+            sess.run(copy_ops)
+            # Divide and conquer: to avoid allocating too much GPU memory
             test_pred_val = []
             for i in range(0, len(test_x), FLAGS.test_batch_size):
                 test_x_batch = test_x[i:i + FLAGS.test_batch_size]
@@ -462,7 +447,7 @@ def main(_):
 
             visualize_result.vis(np_file_result)
 
-    # 保存最终的模型
+    # Save the final model
     checkpoint_dir = os.path.join(result_folder, 'checkpoints')
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)

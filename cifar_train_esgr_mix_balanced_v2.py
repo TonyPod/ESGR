@@ -1,5 +1,11 @@
 # -*- coding:utf-8 -*-
 
+# The second implementation of the balanced version of ESGR-mix (in the paper, I only report the result of the
+# first implementation of ESGR-mix (setting FLAGS.balanced to True). The difference is the composition of the
+# training samples of the new classes. In the first implementation, only a portion of the incoming samples of
+# new classes are utilized. In this implementation, I sample data of new classes every epoch and make each sample
+# equally sampled
+
 import tensorflow as tf
 tf.set_random_seed(1993)
 
@@ -118,6 +124,7 @@ def main(_):
 
     pp.pprint(flags.FLAGS.__flags)
 
+    # Load the class order
     order = []
     with open('cifar-100_%s.txt' % FLAGS.order_file) as file_in:
         for line in file_in.readlines():
