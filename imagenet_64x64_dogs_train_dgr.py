@@ -47,15 +47,13 @@ flags.DEFINE_integer("n_gpus", 1, "")
 
 flags.DEFINE_boolean("only_gen_no_cls", False, "")
 
-# 超参数选取
 flags.DEFINE_boolean('use_momentum', True, '优化算法是否加冲量，如果不加的话是GradientDescent')
 flags.DEFINE_float('momentum', 0.9, '')
 
-flags.DEFINE_integer('epochs_per_category', 60, '每个类别的epoch次数')
-flags.DEFINE_integer('train_batch_size', 128, '训练的batch size')
-flags.DEFINE_integer('test_batch_size', 128, 'test的batch size')
+flags.DEFINE_integer('epochs_per_category', 60, 'number of epochs for each training session')
+flags.DEFINE_integer('train_batch_size', 128, 'training batch size')
+flags.DEFINE_integer('test_batch_size', 128, 'test batch size')
 
-# 训练的相关常量
 flags.DEFINE_float('base_lr', .2, '2. for sigmoid, .2 for softmax')
 flags.DEFINE_float('weight_decay', 0.00001, '0.00001')
 flags.DEFINE_float('lr_factor', 5., '')
@@ -63,7 +61,6 @@ flags.DEFINE_integer('display_interval', 20, '')
 flags.DEFINE_integer('test_interval', 100, '')
 lr_strat = [20, 30, 40, 50]
 
-# 其他参数选取
 flags.DEFINE_string('result_dir', 'result/', '')
 
 # Network architecture
@@ -129,7 +126,7 @@ def main(_):
                 raise Exception()
             return logits, end_points
 
-        # save all intermediate result in the result_folder
+        # Save all intermediate result in the result_folder
         method_name = '_'.join(os.path.basename(__file__).split('.')[0].split('_')[4:])
         method_name += '_gen_%d_and_select' % FLAGS.gen_how_many if FLAGS.gen_more_and_select else ''
 
@@ -143,6 +140,7 @@ def main(_):
                                      'adam_lr_' + str(FLAGS.adam_lr),
                                      method_name)
 
+        # Add a "_run-i" suffix to the folder name if the folder exists
         if os.path.exists(result_folder):
             temp_i = 2
             while True:
@@ -223,13 +221,12 @@ def main(_):
             test_accuracy = tf.placeholder(tf.float32)
 
             '''
-            Copy network
+            Copy network (define the copying op)
             '''
-            # test_network的参数与train_network相同
             if FLAGS.network_arch == 'resnet':
                 all_variables = tf.get_collection(tf.GraphKeys.WEIGHTS)
             else:
-                raise Exception()
+                raise Exception('Invalid network architecture')
             copy_ops = [all_variables[ix + len(all_variables) // 2].assign(var.value()) for ix, var in
                         enumerate(all_variables[0:len(all_variables) // 2])]
 
@@ -250,7 +247,7 @@ def main(_):
             config = tf.ConfigProto()
             config.gpu_options.allow_growth = True
             sess = tf.Session(config=config, graph=graph_cls)
-            sess.run(tf.global_variables_initializer())  # 初始化
+            sess.run(tf.global_variables_initializer())
 
             saver = tf.train.Saver()
 
@@ -272,12 +269,12 @@ def main(_):
         '''
         Declaration of other vars
         '''
-        # 累积准确率
+        # Average accuracy on seen classes
         aver_acc_over_time = dict()
         aver_acc_per_class_over_time = dict()
         conf_mat_over_time = dict()
 
-        # 网络的mask
+        # Network mask
         mask_output_val = np.zeros([NUM_CLASSES], dtype=bool)
         mask_output_val_prev = np.zeros([NUM_CLASSES], dtype=bool)
         mask_output_test = np.zeros([NUM_CLASSES], dtype=bool)
@@ -382,7 +379,7 @@ def main(_):
         '''
         Train classification model
         '''
-        # 第一个类别不用训练classifier
+        # No need to train the classifier if there is only one class
         if (to_category_idx > 0 and not FLAGS.only_gen_no_cls) or not FLAGS.use_softmax:
 
             # init certain layers
@@ -470,8 +467,6 @@ def main(_):
                         print("NEW LEARNING RATE: %f" % lr)
                     epoch_idx = epoch_idx + 1
 
-                    # print('Epoch %d' % epoch_idx)
-
                     shuffled_indices = range(train_x.shape[0])
                     np.random.shuffle(shuffled_indices)
                     for i in range(0, len(shuffled_indices), FLAGS.train_batch_size):
@@ -497,8 +492,9 @@ def main(_):
 
                 # Test
                 if iteration % FLAGS.test_interval == 0:
-                    sess.run(copy_ops)  # 拷贝LeNet-train中的weights/biases到LeNet-test上
-                    # devide and conquer: to avoid allocating too much GPU memory
+                    sess.run(copy_ops)
+
+                    # Divide and conquer: to avoid allocating too much GPU memory
                     test_pred_val = []
                     for i in range(0, len(test_x), FLAGS.test_batch_size):
                         test_x_batch = test_x[i:i + FLAGS.test_batch_size]
@@ -530,8 +526,8 @@ def main(_):
             '''
             Final test(before the next class is added)
             '''
-            sess.run(copy_ops)  # 拷贝LeNet-train中的weights/biases到LeNet-test上
-            # devide and conquer: to avoid allocating too much GPU memory
+            sess.run(copy_ops)
+            # Divide and conquer: to avoid allocating too much GPU memory
             test_pred_val = []
             for i in range(0, len(test_x), FLAGS.test_batch_size):
                 test_x_batch = test_x[i:i + FLAGS.test_batch_size]
@@ -577,7 +573,7 @@ def main(_):
                 train_y_gan = np.concatenate((train_y_gan, np.zeros(len(gen_samples_x))))
             acwgan_obj.train(train_x_gan, train_y_gan, test_x_gan, test_y_gan, to_category_idx)
 
-    # 保存最终的模型
+    # Save the final model
     if not FLAGS.only_gen_no_cls:
         checkpoint_dir = os.path.join(result_folder, 'checkpoints')
         if not os.path.exists(checkpoint_dir):
