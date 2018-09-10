@@ -650,8 +650,8 @@ def main(_):
                 '''
                 Final test(before the next class is added)
                 '''
-                sess.run(copy_ops)  # 拷贝LeNet-train中的weights/biases到LeNet-test上
-                # devide and conquer: to avoid allocating too much GPU memory
+                sess.run(copy_ops)
+                # Divide and conquer: to avoid allocating too much GPU memory
                 test_pred_val = []
                 for i in range(0, len(test_x), FLAGS.test_batch_size):
                     test_x_batch = test_x[i:i + FLAGS.test_batch_size]
@@ -684,8 +684,8 @@ def main(_):
             if FLAGS.reorder_exemplars:
                 for old_category_idx in range(category_idx):
 
-                    sess.run(copy_ops)  # 拷贝LeNet-train中的weights/biases到LeNet-test上
-                    # devide and conquer: to avoid allocating too much GPU memory
+                    sess.run(copy_ops)
+                    # Divide and conquer: to avoid allocating too much GPU memory
                     train_prob_cur_cls_exemplars_val = sess.run(test_masked_prob,
                                                                 feed_dict={batch_images: cifar100.convert_images(
                                                                            exemplars[old_category_idx]),
@@ -699,8 +699,8 @@ def main(_):
                 train_indices_cur_cls = [idx for idx in range(NUM_TRAIN_SAMPLES_TOTAL) if train_labels[idx] == category_idx_in_group]
                 train_x_cur_cls = raw_images_train[train_indices_cur_cls]
                 train_x_cur_cls_normalized = cifar100.convert_images(train_x_cur_cls, pixel_mean=pixel_mean)
-                sess.run(copy_ops)  # 拷贝LeNet-train中的weights/biases到LeNet-test上
-                # devide and conquer: to avoid allocating too much GPU memory
+                sess.run(copy_ops)
+                # Divide and conquer: to avoid allocating too much GPU memory
                 train_prob_cur_cls_val = sess.run(test_masked_prob, feed_dict={batch_images: train_x_cur_cls_normalized,
                                                                                mask_output: mask_output_val})
                 train_prob_cur_cls_val = train_prob_cur_cls_val[:, category_idx_in_group]
@@ -765,7 +765,7 @@ def main(_):
                 np_file_exemplars = os.path.join(exemplars_dir, 'exemplars_%d' % (category_idx_in_group+1))
                 np.save(np_file_exemplars, exemplars)
 
-    # 保存最终的模型
+    # Save the final model
     if not FLAGS.only_gen_no_cls:
         checkpoint_dir = os.path.join(result_folder, 'checkpoints')
         if not os.path.exists(checkpoint_dir):

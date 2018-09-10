@@ -18,15 +18,11 @@ import os
 
 import pickle
 
-def GetFileNameAndExt(filename):
+
+def getFileNamesAndExt(filename):
     (filepath, tempfilename) = os.path.split(filename)
     (shotname, ext_name) = os.path.splitext(tempfilename)
     return shotname, ext_name
-
-def calc_mean_std(result):
-    mean_result = np.mean(result, axis=0)
-    std_result = np.std(result, axis=0)
-    return mean_result, std_result
 
 
 def vis_multiple(np_file_dict, interval, keys=None, dataset_name='CIFAR-100', output_name='comparison.jpg'):
@@ -38,7 +34,7 @@ def vis_multiple(np_file_dict, interval, keys=None, dataset_name='CIFAR-100', ou
     else:
         keys_order = np_file_dict.keys()
 
-    folder_name, _ = GetFileNameAndExt(output_name)
+    folder_name, _ = getFileNamesAndExt(output_name)
     parent_folder_name = 'comparisons'
     folder_name = os.path.join(parent_folder_name, folder_name)
     if not os.path.exists(folder_name):
@@ -73,6 +69,7 @@ def vis_multiple(np_file_dict, interval, keys=None, dataset_name='CIFAR-100', ou
 
         print('%s: forget: %f, learn: %f, last: %f, forget rate: %f, auc: %f' %
               (method_name, forget_score, learn_score, last_score, forget_rate, auc))
+
 
 def visualize_conf_mat(conf_mat, folder_name, method_name):
 

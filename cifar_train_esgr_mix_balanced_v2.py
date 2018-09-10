@@ -716,8 +716,8 @@ def main(_):
                                          train_labels[idx] == category_idx_in_group]
                 train_x_cur_cls = raw_images_train[train_indices_cur_cls]
                 train_x_cur_cls_normalized = cifar100.convert_images(train_x_cur_cls, pixel_mean=pixel_mean)
-                sess.run(copy_ops)  # 拷贝LeNet-train中的weights/biases到LeNet-test上
-                # devide and conquer: to avoid allocating too much GPU memory
+                sess.run(copy_ops)
+                # Divide and conquer: to avoid allocating too much GPU memory
                 train_prob_cur_cls_val = sess.run(test_masked_prob, feed_dict={batch_images: train_x_cur_cls_normalized,
                                                                                mask_output: mask_output_val})
                 train_prob_cur_cls_val = train_prob_cur_cls_val[:, category_idx_in_group]

@@ -47,7 +47,7 @@ flags.DEFINE_integer("n_gpus", 1, "")
 
 flags.DEFINE_boolean("only_gen_no_cls", False, "")
 
-flags.DEFINE_boolean('use_momentum', True, '优化算法是否加冲量，如果不加的话是GradientDescent')
+flags.DEFINE_boolean('use_momentum', True, 'Gradient descent or gradient descent with momentum')
 flags.DEFINE_float('momentum', 0.9, '')
 
 flags.DEFINE_integer('epochs_per_category', 60, 'number of epochs for each training session')
@@ -554,7 +554,7 @@ def main(_):
             with open(np_file_result, 'wb') as file:
                 pickle.dump(dump_obj, file)
 
-            visualize_result.vis(np_file_result, 'ImageNet64x64')
+            visualize_result.vis(np_file_result, 'ImageNetDogs')
 
         '''
         Train generative model(W-GAN)

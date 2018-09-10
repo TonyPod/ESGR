@@ -48,7 +48,7 @@ flags.DEFINE_string("pretrained_model_sub_dir", 'cifar-10/0.0001/200000/all_clas
 
 flags.DEFINE_boolean("only_gen_no_cls", False, "")
 
-flags.DEFINE_boolean('use_momentum', True, '优化算法是否加冲量，如果不加的话是GradientDescent')
+flags.DEFINE_boolean('use_momentum', True, 'Gradient descent or gradient descent with momentum')
 flags.DEFINE_float('momentum', 0.9, '')
 
 flags.DEFINE_integer('epochs_per_category', 70, 'number of epochs for each training session')

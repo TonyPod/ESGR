@@ -18,10 +18,6 @@ import os
 
 import pickle
 
-def GetFileNameAndExt(filename):
-    (filepath, tempfilename) = os.path.split(filename)
-    (shotname, ext_name) = os.path.splitext(tempfilename)
-    return shotname, ext_name
 
 def calc_mean_std(result):
     mean_result = np.mean(result, axis=0)
@@ -50,9 +46,9 @@ def vis_multiple(np_files_dict, interval, keys=None, dataset_name='CIFAR-100', o
 
     plt.gca().set_autoscale_on(False)
 
-    plt.xlim(0, num_class)  # 限定横轴的范围
+    plt.xlim(0, num_class)
     assert len(ylim) == 2
-    plt.ylim(ylim)  # 限定纵轴的范围
+    plt.ylim(ylim)
 
     if keys is not None:
         keys_order = keys
@@ -135,7 +131,7 @@ def vis_multiple(np_files_dict, interval, keys=None, dataset_name='CIFAR-100', o
         plt.errorbar(x[:len(y_mean)], y_mean, yerr=y_std, marker='.', label=method_name, color=color_map[method_name])
         # plt.plot(x[:len(aver_acc_over_time_mul)], aver_acc_over_time_mul, marker='.', label=method_name)
 
-    plt.legend(fontsize=fontsize)  # 让图例生效
+    plt.legend(fontsize=fontsize)
     if interval == 1:
         plt.xticks(x[9::10], x_names[9::10], rotation=45, fontsize=fontsize) # too crowded in x-axis for one-class adding
     else:
@@ -145,11 +141,11 @@ def vis_multiple(np_files_dict, interval, keys=None, dataset_name='CIFAR-100', o
     plt.margins(0)
     # plt.subplots_adjust(bottom=0.15)
 
-    plt.xlabel("Number of classes", fontsize=fontsize)  # X轴标签
-    plt.ylabel("Accuracy", fontsize=fontsize)  # Y轴标签
-    plt.title(dataset_name)  # 标题
+    plt.xlabel("Number of classes", fontsize=fontsize)
+    plt.ylabel("Accuracy", fontsize=fontsize)
+    plt.title(dataset_name)
 
-    # 水平参考线
+    # Horizontal reference lines
     for i in range(10, 100, 10):
         plt.hlines(i, 0, num_class, colors = "lightgray", linestyles = "dashed")
 
@@ -157,214 +153,6 @@ def vis_multiple(np_files_dict, interval, keys=None, dataset_name='CIFAR-100', o
     plt.savefig(os.path.join(parent_folder_name, output_name + '.png'))
     plt.savefig(os.path.join(parent_folder_name, output_name + '.svg'))
     plt.savefig(os.path.join(parent_folder_name, output_name + '.pdf'))
-
-
-def visualize_conf_mat(conf_mat, folder_name, method_name):
-
-    conf_mat = conf_mat / 50.0
-
-    fig = plt.figure(figsize=(4, 4), dpi=220)
-    plt.clf()
-    ax = fig.add_subplot(111)
-    ax.set_aspect(1)
-    res = ax.imshow(np.array(conf_mat), cmap=plt.cm.jet,
-                    interpolation='Nearest', vmin=0, vmax=1.0)
-
-    width, height = conf_mat.shape
-
-    # for x in range(0, width, 20):
-    #     for y in range(0, height, 20):
-    #         ax.annotate(str(conf_mat[x][y]), xy=(y, x),
-    #                     horizontalalignment='center',
-    #                     verticalalignment='center')
-
-    # cb = fig.colorbar(res)
-    plt.xticks(range(9, 109, 10), range(10, 110, 10))
-    plt.yticks(range(9, 109, 10), range(10, 110, 10))
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
-    plt.savefig(os.path.join(folder_name, method_name + '.png'), format='png')
-    plt.savefig(os.path.join(folder_name, method_name + '.svg'), format='svg')
-
-
-def calc_forget_adapt_score(acc_cls_dict, interval, is_conf_mat=False):
-    if interval == 1 and not acc_cls_dict.has_key(0):
-        acc_cls_dict[0] = np.array([100])
-
-    if is_conf_mat:
-        last_acc = np.diag(acc_cls_dict[99]) / 100.
-    else:
-        last_acc = acc_cls_dict[99] / 100.
-    best_acc = []
-    for i in range(0, 100, interval):
-        cls_idx = i + interval
-        if is_conf_mat:
-            best_acc[i:cls_idx] = np.diag(acc_cls_dict[cls_idx-1])[i:cls_idx] / 100.
-        else:
-            best_acc[i:cls_idx] = acc_cls_dict[cls_idx-1][i:cls_idx] / 100.
-    best_acc = np.array(best_acc)
-
-    forget_score = np.mean(best_acc - last_acc)
-    learn_score = np.mean(best_acc)
-    last_score = np.mean(last_acc)
-
-    return forget_score, learn_score, last_score
-
-# if __name__ == '__main__':
-#
-#     # # Figure 1: CIFAR-100 nb_cl=1 LeNet
-#     # np_files_dict = {
-#     #     'iCaRL': [
-#     #         '/home/hechen/iCaRL/iCaRL-TheanoLasagne/result_nb_cl_1/order_1/LeNet/70/0.2/20/top1_acc_list_cumul_icarl_cl1.npy',
-#     #         '/home/hechen/iCaRL/iCaRL-TheanoLasagne/result_nb_cl_1/order_2/LeNet/70/0.2/20/top1_acc_list_cumul_icarl_cl1.npy',
-#     #         '/home/hechen/iCaRL/iCaRL-TheanoLasagne/result_nb_cl_1/order_3/LeNet/70/0.2/20/top1_acc_list_cumul_icarl_cl1.npy'],
-#     #     'Joint Training': [
-#     #         './result/cifar-100_order_1/nb_cl_1/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/joint_training/acc_over_time.pkl',
-#     #         './result/cifar-100_order_2/nb_cl_1/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/joint_training/acc_over_time.pkl',
-#     #         './result/cifar-100_order_3/nb_cl_1/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/joint_training/acc_over_time.pkl'],
-#     #     'Gens+reals': [
-#     #         './result/cifar-100_order_1/nb_cl_1/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_high_1.0-1.0_icarl_2000/acc_over_time.pkl',
-#     #         './result/cifar-100_order_2/nb_cl_1/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_high_1.0-1.0_icarl_2000/acc_over_time.pkl',
-#     #         './result/cifar-100_order_3/nb_cl_1/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_high_1.0-1.0_icarl_2000/acc_over_time.pkl'],
-#     #     'Gens': [
-#     #         './result/cifar-100_order_1/nb_cl_1/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp/acc_over_time.pkl',
-#     #         './result/cifar-100_order_2/nb_cl_1/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp/acc_over_time.pkl',
-#     #         './result/cifar-100_order_3/nb_cl_1/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp/acc_over_time.pkl'],
-#     #     'Reals': [
-#     #         './result/cifar-100_order_1/nb_cl_1/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_high_1.0-1.0_icarl_2000_ablation_epoch_based/acc_over_time.pkl',
-#     #         './result/cifar-100_order_2/nb_cl_1/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_high_1.0-1.0_icarl_2000_ablation_epoch_based/acc_over_time.pkl',
-#     #         './result/cifar-100_order_3/nb_cl_1/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_high_1.0-1.0_icarl_2000_ablation_epoch_based/acc_over_time.pkl'],
-#     #     'Upperbound': [
-#     #         './result/cifar-100_order_1/nb_cl_1/truncated/lenet_init_all/weight_decay_1e-05/base_lr_0.01/joint_training/acc_over_time.pkl',
-#     #         './result/cifar-100_order_2/nb_cl_1/truncated/lenet_init_all/weight_decay_1e-05/base_lr_0.01/joint_training/acc_over_time.pkl',
-#     #         './result/cifar-100_order_3/nb_cl_1/truncated/lenet_init_all/weight_decay_1e-05/base_lr_0.01/joint_training/acc_over_time.pkl'],
-#     #
-#     # }
-#     # keys = ['Upperbound', 'Joint Training', 'Gens+reals', 'Gens', 'Reals', 'iCaRL']
-#     # output_name = 'cifar-100_nb_cl_1_1e-3_LeNet_multi_runs'
-#     # vis_multiple(np_files_dict, 1, keys=keys, output_name=output_name, dataset_name='CIFAR-100')
-#
-#     # Figure 2: CIFAR-100 nb_cl=10 LeNet
-#     np_files_dict = {
-#         'iCaRL': [
-#             '/home/hechen/iCaRL/iCaRL-TheanoLasagne/result_nb_cl_10/order_1/LeNet/70/0.2/20/top1_acc_list_cumul_icarl_cl10.npy',
-#             '/home/hechen/iCaRL/iCaRL-TheanoLasagne/result_nb_cl_10/order_2/LeNet/70/0.2/20/top1_acc_list_cumul_icarl_cl10.npy',
-#             '/home/hechen/iCaRL/iCaRL-TheanoLasagne/result_nb_cl_10/order_3/LeNet/70/0.2/20/top1_acc_list_cumul_icarl_cl10.npy'],
-#         'Joint Training': [
-#             './result/cifar-100_order_1/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/joint_training/acc_over_time.pkl',
-#             './result/cifar-100_order_2/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/joint_training/acc_over_time.pkl',
-#             './result/cifar-100_order_3/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/joint_training/acc_over_time.pkl'],
-#         'Gens+reals': [
-#             './result/cifar-100_order_1/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_high_1.0-1.0_icarl_2000/acc_over_time.pkl',
-#             './result/cifar-100_order_2/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_high_1.0-1.0_icarl_2000/acc_over_time.pkl',
-#             './result/cifar-100_order_3/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_high_1.0-1.0_icarl_2000/acc_over_time.pkl'],
-#         'Gens': [
-#             './result/cifar-100_order_1/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp/acc_over_time.pkl',
-#             './result/cifar-100_order_2/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp/acc_over_time.pkl',
-#             './result/cifar-100_order_3/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp/acc_over_time.pkl'],
-#         'Reals': [
-#             './result/cifar-100_order_1/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_high_1.0-1.0_icarl_2000_ablation_epoch_based/acc_over_time.pkl',
-#             './result/cifar-100_order_2/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_high_1.0-1.0_icarl_2000_ablation_epoch_based/acc_over_time.pkl',
-#             './result/cifar-100_order_3/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_high_1.0-1.0_icarl_2000_ablation_epoch_based/acc_over_time.pkl'],
-#         'Upperbound': [
-#             './result/cifar-100_order_1/nb_cl_10/truncated/lenet_init_all/weight_decay_1e-05/base_lr_0.01/joint_training/acc_over_time.pkl',
-#             './result/cifar-100_order_2/nb_cl_10/truncated/lenet_init_all/weight_decay_1e-05/base_lr_0.01/joint_training/acc_over_time.pkl',
-#             './result/cifar-100_order_3/nb_cl_10/truncated/lenet_init_all/weight_decay_1e-05/base_lr_0.01/joint_training/acc_over_time.pkl'],
-#         'LwF(sigmoid)': [
-#             '/home/hechen/iCaRL/iCaRL-TheanoLasagne/result_nb_cl_10/order_1/LeNet/70/0.2/20/top1_acc_list_cumul_icarl_cl10.npy',
-#             '/home/hechen/iCaRL/iCaRL-TheanoLasagne/result_nb_cl_10/order_2/LeNet/70/0.2/20/top1_acc_list_cumul_icarl_cl10.npy',
-#             '/home/hechen/iCaRL/iCaRL-TheanoLasagne/result_nb_cl_10/order_3/LeNet/70/0.2/20/top1_acc_list_cumul_icarl_cl10.npy'],
-#         # My reproduction(lower than hybrid1)
-#         # 'LwF(sigmoid)': [
-#         #     './result/cifar-100_order_1/nb_cl_10/truncated_seperated/lenet_sigmoid_init_no/weight_decay_1e-05/base_lr_0.2/lwf/acc_over_time.pkl',
-#         #     './result/cifar-100_order_2/nb_cl_10/truncated_seperated/lenet_sigmoid_init_no/weight_decay_1e-05/base_lr_0.2/lwf/acc_over_time.pkl',
-#         #     './result/cifar-100_order_3/nb_cl_10/truncated_seperated/lenet_sigmoid_init_no/weight_decay_1e-05/base_lr_0.2/lwf/acc_over_time.pkl'],
-#     }
-#     keys = ['Upperbound', 'Joint Training', 'Gens+reals', 'Gens', 'Reals', 'iCaRL', 'LwF(sigmoid)']
-#     output_name = 'cifar-100_nb_cl_10_1e-3_LeNet_multi_runs'
-#     vis_multiple(np_files_dict, 10, keys=keys, output_name=output_name, dataset_name='CIFAR-100', ylim=(10, 90))
-#
-#     # Figure 3: ImageNet Dogs nb_cl=10 ResNet
-#     np_files_dict = {
-#         # 'iCaRL': [
-#         #     '/home/hechen/iCaRL/iCaRL-TheanoLasagne/result_nb_cl_10/order_1/LeNet/70/0.2/20/top1_acc_list_cumul_icarl_cl10.npy',
-#         # ],
-#         'Joint Training': [
-#             './result/imagenet_64x64_dogs_order_1/nb_cl_10/truncated/resnet_init_no/weight_decay_1e-05/base_lr_0.2/joint_training/acc_over_time.pkl',
-#         ],
-#         'Gens+reals': [
-#             './result/imagenet_64x64_dogs_order_1/nb_cl_10/truncated/resnet_init_no/weight_decay_1e-05/base_lr_0.2/adam_lr_0.0002/acwgan_gp_proto_high_1.0-1.0_icarl_2400_smoothing_1.0/acc_over_time.pkl',
-#         ],
-#         'Gens': [
-#             './result/imagenet_64x64_dogs_order_1/nb_cl_10/truncated/resnet_init_no/weight_decay_1e-05/base_lr_0.2/adam_lr_0.0002/acwgan_gp/acc_over_time.pkl',
-#         ],
-#         'Reals': [
-#             './result/imagenet_64x64_dogs_order_1/nb_cl_10/truncated/resnet_init_no/weight_decay_1e-05/base_lr_0.2/adam_lr_0.0002/acwgan_gp_proto_high_1.0-1.0_icarl_2400_smoothing_1.0_ablation_epoch_based/acc_over_time.pkl',
-#         ],
-#         'Upperbound': [
-#             './result/imagenet_64x64_dogs_order_1/nb_cl_10/truncated/resnet_init_all/weight_decay_1e-05/base_lr_0.2/joint_training/acc_over_time.pkl',
-#         ],
-#         'LwF(sigmoid)': [
-#             './result/imagenet_64x64_dogs_order_1/nb_cl_10/truncated_seperated/resnet_sigmoid_init_no/weight_decay_1e-05/base_lr_2.0/lwf/acc_over_time.pkl',
-#         ]
-#     }
-#     keys = ['Upperbound', 'Joint Training', 'Gens+reals', 'Gens', 'Reals', 'LwF(sigmoid)']
-#     output_name = 'imagenet_dogs_nb_cl_10_ResNet'
-#     vis_multiple(np_files_dict, 10, keys=keys, output_name=output_name, dataset_name='ImageNet Dogs', ylim=(0, 60))
-#
-#     # Figure 4: CIFAR-100 nb_cl=10 LeNet comparisons on good and bad generators
-#     np_files_dict = {
-#         'Gens+reals(Good)': [
-#             './result/cifar-100_order_1/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_high_1.0-1.0_icarl_2000/acc_over_time.pkl',
-#             './result/cifar-100_order_2/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_high_1.0-1.0_icarl_2000/acc_over_time.pkl',
-#             './result/cifar-100_order_3/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_high_1.0-1.0_icarl_2000/acc_over_time.pkl'],
-#         'Gens(Good)': [
-#             './result/cifar-100_order_1/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp/acc_over_time.pkl',
-#             './result/cifar-100_order_2/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp/acc_over_time.pkl',
-#             './result/cifar-100_order_3/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp/acc_over_time.pkl'],
-#         'Gens+reals(Bad)': [
-#             './result/cifar-100_order_1/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.0001/wgan_gp_proto_high_1.0-1.0_icarl_2000/acc_over_time.pkl',
-#             './result/cifar-100_order_2/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.0001/wgan_gp_proto_high_1.0-1.0_icarl_2000/acc_over_time.pkl',
-#             './result/cifar-100_order_3/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.0001/wgan_gp_proto_high_1.0-1.0_icarl_2000/acc_over_time.pkl'],
-#         'Gens(Bad)': [
-#             './result/cifar-100_order_1/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.0001/wgan_gp/acc_over_time.pkl',
-#             './result/cifar-100_order_2/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.0001/wgan_gp/acc_over_time.pkl',
-#             './result/cifar-100_order_3/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.0001/wgan_gp/acc_over_time.pkl'],
-#     }
-#     keys = ['Gens+reals(Good)', 'Gens(Good)', 'Gens+reals(Bad)', 'Gens(Bad)']
-#     output_name = 'cifar-100_nb_cl_10_LeNet_good_bad_gen_multi_runs'
-#     vis_multiple(np_files_dict, 10, keys=keys, output_name=output_name, dataset_name='CIFAR-100', ylim=(10, 90))
-#
-#     # Figure 5: CIFAR-100 nb_cl=10 LeNet comparisons on exemplars selection strategies
-#     np_files_dict = {
-#         'Mix(high, Good)': [
-#             './result/cifar-100_order_1/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_high_1.0-1.0_icarl_2000/acc_over_time.pkl',
-#             './result/cifar-100_order_2/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_high_1.0-1.0_icarl_2000/acc_over_time.pkl',
-#             './result/cifar-100_order_3/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_high_1.0-1.0_icarl_2000/acc_over_time.pkl'],
-#         'Mix(low, Good)': [
-#             './result/cifar-100_order_1/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_low_1.0-1.0_icarl_2000/acc_over_time.pkl',
-#             './result/cifar-100_order_2/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_low_1.0-1.0_icarl_2000/acc_over_time.pkl',
-#             './result/cifar-100_order_3/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_low_1.0-1.0_icarl_2000/acc_over_time.pkl'],
-#         'Mix(random, Good)': [
-#             './result/cifar-100_order_1/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_random_1.0-1.0_icarl_2000/acc_over_time.pkl',
-#             './result/cifar-100_order_2/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_random_1.0-1.0_icarl_2000/acc_over_time.pkl',
-#             './result/cifar-100_order_3/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.001/wgan_gp_proto_random_1.0-1.0_icarl_2000/acc_over_time.pkl'],
-#         'Mix(high, Bad)': [
-#             './result/cifar-100_order_1/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.0001/wgan_gp_proto_high_1.0-1.0_icarl_2000/acc_over_time.pkl',
-#             './result/cifar-100_order_2/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.0001/wgan_gp_proto_high_1.0-1.0_icarl_2000/acc_over_time.pkl',
-#             './result/cifar-100_order_3/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.0001/wgan_gp_proto_high_1.0-1.0_icarl_2000/acc_over_time.pkl'],
-#         'Mix(low, Bad)': [
-#             './result/cifar-100_order_1/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.0001/wgan_gp_proto_low_1.0-1.0_icarl_2000/acc_over_time.pkl',
-#             './result/cifar-100_order_2/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.0001/wgan_gp_proto_low_1.0-1.0_icarl_2000/acc_over_time.pkl',
-#             './result/cifar-100_order_3/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.0001/wgan_gp_proto_low_1.0-1.0_icarl_2000/acc_over_time.pkl'],
-#         'Mix(random, Bad)': [
-#             './result/cifar-100_order_1/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.0001/wgan_gp_proto_random_1.0-1.0_icarl_2000/acc_over_time.pkl',
-#             './result/cifar-100_order_2/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.0001/wgan_gp_proto_random_1.0-1.0_icarl_2000/acc_over_time.pkl',
-#             './result/cifar-100_order_3/nb_cl_10/truncated/lenet_init_no/weight_decay_1e-05/base_lr_0.01/adam_lr_0.0001/wgan_gp_proto_random_1.0-1.0_icarl_2000/acc_over_time.pkl'],
-#     }
-#     keys = ['Mix(high, Good)', 'Mix(low, Good)', 'Mix(random, Good)', 'Mix(high, Bad)', 'Mix(low, Bad)', 'Mix(random, Bad)']
-#     output_name = 'cifar-100_nb_cl_10_LeNet_exemplars_selection_multi_runs'
-#     vis_multiple(np_files_dict, 10, keys=keys, output_name=output_name, dataset_name='CIFAR-100', ylim=(10, 90))
 
 
 if __name__ == '__main__':

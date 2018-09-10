@@ -386,7 +386,7 @@ def main(_):
             with open(np_file_result, 'wb') as file:
                 pickle.dump(dump_obj, file)
 
-            visualize_result.vis(np_file_result, 'ImageNet64x64')
+            visualize_result.vis(np_file_result, 'ImageNetDogs')
 
     # Save the final model
     checkpoint_dir = os.path.join(result_folder, 'checkpoints')
