@@ -1,5 +1,10 @@
 # -*- coding:utf-8 -*-
 
+'''
+Implememtation of the proposed method ESGR-reals (for ablation study only)
+It needs the exemplars of ESGR-mix
+'''
+
 import tensorflow as tf
 tf.set_random_seed(1993)
 

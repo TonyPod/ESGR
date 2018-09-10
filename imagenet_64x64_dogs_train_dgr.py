@@ -1,5 +1,9 @@
 # -*- coding:utf-8 -*-
 
+'''
+Implementation of the NIPS 2017 paper - Continual Learning with Deep Generative Replay
+'''
+
 import tensorflow as tf
 tf.set_random_seed(1993)
 

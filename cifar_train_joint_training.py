@@ -1,5 +1,9 @@
 # -*- coding:utf-8 -*-
 
+'''
+Implememtation of the joint training which can be seen as the upperbound
+'''
+
 import tensorflow as tf
 tf.set_random_seed(1993)
 

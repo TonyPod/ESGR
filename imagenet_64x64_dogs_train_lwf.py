@@ -1,5 +1,9 @@
 # -*- coding:utf-8 -*-
 
+'''
+Implememtation of Learning without Forgetting (LwF)
+'''
+
 import tensorflow as tf
 tf.set_random_seed(1993)
 
