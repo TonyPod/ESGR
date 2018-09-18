@@ -22,9 +22,11 @@ For ImageNet-Dogs, download the [ImageNet64x64](https://pan.baidu.com/s/1k3tXWDT
 
 If you use our codes, please cite it:
 
+```bibtex
 @inproceedings{he-bmvc2018,
   title = {Exemplar-Supported Generative Reproduction for Class Incremental Learning},
   author = {Chen He, Ruiping Wang, Shiguang Shan, and Xilin Chen},
   booktitle = {British Machine Vision Conference (BMVC)},
   year = {2018}
 }
+```
