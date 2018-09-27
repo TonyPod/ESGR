@@ -15,7 +15,7 @@ Latest version of Tensorflow (implemented and tested under Tensorflow 1.3)
 
 For CIFAR-100, download the [python version of CIFAR-100](http://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz) and extract it in a certain folder, let's say /home/user/cifar-100-python, then set data_path of cifar100.py to /home/user
 
-For ImageNet-Dogs, download the [ImageNet64x64](https://pan.baidu.com/s/1k3tXWDTJ7tsoYZXStXu4pQ) (downsampled ImageNet according to https://patrykchrabaszcz.github.io/Imagenet32/; to facilitate the training process, I store pictures of a certain class in a seperate file) dataset first and change data_path to your folder path
+For ImageNet-Dogs, download the [ImageNet64x64](https://pan.baidu.com/s/1k3tXWDTJ7tsoYZXStXu4pQ) (downsampled ImageNet according to https://patrykchrabaszcz.github.io/Imagenet32/; to facilitate the training process, I store images of different classes in different pickle files) dataset first and change data_path to your folder path
 
 
 ## Citation
