@@ -1,6 +1,6 @@
 # Exemplar-Supported Generative Reproduction for Class Incremental Learning
 
-This paper has been accepted as a poster at BMVC 2018
+This paper has been accepted as a poster at BMVC 2018 [[Paper]](http://bmvc2018.org/contents/papers/0325.pdf)[[Supplementary Material]](http://bmvc2018.org/contents/supplementary/pdf/0325_supp.pdf)
 
 ## Abstract
 
