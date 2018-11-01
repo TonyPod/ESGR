@@ -34,3 +34,5 @@ If you use our codes, please cite it:
 ## Further
 
 If you have any question, feel free to contact me. My email is chen.he@vipl.ict.ac.cn
+
+P.S. The implementation of WGAN-GP is based on https://github.com/igul222/improved_wgan_training
